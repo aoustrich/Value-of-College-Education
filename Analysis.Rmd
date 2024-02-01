@@ -1,0 +1,38 @@
+---
+title: "Analysis of the Value of a College Education"
+author: "Aaron Oustrich, Josh Bergstrom, Anna"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(knitr)
+library(ggplot2)
+library(GGally)
+library(car)
+library(MASS)
+library(lmtest)
+library(vroom)
+
+salaries <- vroom("Salary.csv")
+```
+# 1.
+
+# 2.
+
+# 3.
+
+# 4.
+
+# 5.
+
+# 6.
+
+# 7.
+
+# 8.
+
+# 9.
