@@ -1,6 +1,6 @@
 ---
 title: "Analysis of the Value of a College Education"
-author: "Aaron Oustrich, Josh Bergstrom, Anna"
+author: "Aaron Oustrich, Josh Bergstrom, Anna Wolford"
 date: "`r Sys.Date()`"
 output: html_document
 ---
@@ -17,22 +17,93 @@ library(MASS)
 library(lmtest)
 library(vroom)
 
-salaries <- vroom("Salary.csv")
+#Analysis Questions:
+
+## Read in data
+sal <- vroom("Salary.csv")
+sal$MajorCategory <- as.factor(sal$MajorCategory)
+sal$Gen <- as.factor(sal$Gen)
+# head(sal)
 ```
-# 1.
+```{r}
+ggplot(sal, aes(x = GPA, y = Salary, color = Gen)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, formula = y ~ x, aes(group = Gen)) +
+  labs(title = "Scatterplot of GPA and Salary",
+       x = "GPA",
+       y = "Salary") +  
+  theme_minimal()
+```
 
-# 2.
 
-# 3.
 
-# 4.
+```{r}
+ggplot(sal, aes(x = MajorCategory, y = Salary, fill = MajorCategory)) +
+  geom_boxplot() +
+  labs(title = "Box Plot of Salary by Major Category",
+       x = "Major Category",
+       y = "Salary") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+```
 
-# 5.
+```{r}
+ggplot(sal, aes(x = MajorCategory, y = Salary, fill = Gen)) +
+  geom_boxplot(position = "dodge") +
+  labs(title = "Box Plot of Salary by Major Category and Gender",
+       x = "Major Category",
+       y = "Salary",
+       fill = "Gender") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+```{r}
+ggplot(sal, aes(x = MajorCategory, fill = Gen)) +
+  geom_bar(position = "dodge") +
+  labs(title = "Bar Graph of Major Category Counts by Gender",
+       x = "Major Category",
+       y = "Count",
+       fill = "Gender") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  
+```
 
-# 6.
 
-# 7.
 
-# 8.
 
-# 9.
+**1. Create exploratory plots and calculate summary statistics from the data. Comment on any potential relationships you see from these exploratory plots.**
+
+
+
+
+
+
+**2. Write down a linear regression model (in matrix and vector form) in terms of parameters. Explain the meaning of any parameters in your model. Explain how statistical inference for your model can be used to answer the effect of major choice and identify any gender discrimination.**
+
+
+**3. Using first principles (i.e. DON’T use lm() but you can check your answer with lm() ), calculate and report the estimates in a table.**
+**Interpret the coefficient for 1 categorical explanatory variable and the coefficient for GPA. Also calculate the estimate of the residual variance (or standard deviation) and (you can use lm() to get ).**
+
+
+
+**4. One common argument is that some disciplines have greater biases (in terms of lower salaries) towards women than others. To verify this, check for interactions between major and gender by (i) drawing side-by-side boxplots of salary for each major category and gender combination and (ii) running an appropriate hypothesis test (either t or F) to check for significance. Comment on potential gender -->**
+<!-- # βˆ -->
+<!-- R -->
+<!-- 2 R -->
+<!-- 2 -->
+<!-- discrimination from your boxplot. For your hypothesis test, state your hypotheses, report an appropriate test statistic, -value and give -->
+your conclusion.
+
+**5. The validity of the tests from #4 depend on the validity of the assumptions in your model (if your assumptions are violated then the values are likely wrong). Create graphics and/or run appropriate hypothesis tests to check the L-I-N-E assumptions associated with your multiple linear regression model including any interactions you found in #4. State why each assumption does or does not hold for the salary data.**
+
+
+**6. Calculate 97% confidence intervals for the coefficients for GPA, Gender and one major category. Interpret each interval.**
+
+
+**7. For the Computers and Mathematics major category, perform a general linear hypothesis test that women, on average, earn less salary than men (for the same GPA). State your hypotheses, -value and conclusion. If this test is significant, report and estimate a 95% confidence interval for how much more men earn than women in that major category.**
+
+
+**8. Using predict.lm() and your fitted model, predict your salary and report an associated 95% prediction interval. Interpret this interval in context.**
+
+
+**9. If we wish to use our model for prediction as we did in #8, we should verify how accurate our predictions are via cross-validation. Conduct a leave-one-out cross validation of the salary data. Report your average RPMSE along with the average prediction interval width. Comment on whether you think your predictions are accurate or not.**
