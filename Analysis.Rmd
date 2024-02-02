@@ -25,6 +25,11 @@ sal$MajorCategory <- as.factor(sal$MajorCategory)
 sal$Gen <- as.factor(sal$Gen)
 # head(sal)
 ```
+
+**1. Create exploratory plots and calculate summary statistics from the data. Comment on any potential relationships you see from these exploratory plots.**
+
+<!-- ADD A SCATTERPLOT MATRIX GGPAIRS --> 
+
 ```{r}
 ggplot(sal, aes(x = GPA, y = Salary, color = Gen)) +
   geom_point() +
@@ -47,16 +52,7 @@ ggplot(sal, aes(x = MajorCategory, y = Salary, fill = MajorCategory)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
 ```
 
-```{r}
-ggplot(sal, aes(x = MajorCategory, y = Salary, fill = Gen)) +
-  geom_boxplot(position = "dodge") +
-  labs(title = "Box Plot of Salary by Major Category and Gender",
-       x = "Major Category",
-       y = "Salary",
-       fill = "Gender") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-```
+
 ```{r}
 ggplot(sal, aes(x = MajorCategory, fill = Gen)) +
   geom_bar(position = "dodge") +
@@ -71,20 +67,40 @@ ggplot(sal, aes(x = MajorCategory, fill = Gen)) +
 
 
 
-**1. Create exploratory plots and calculate summary statistics from the data. Comment on any potential relationships you see from these exploratory plots.**
-
-
-
-
-
-
 **2. Write down a linear regression model (in matrix and vector form) in terms of parameters. Explain the meaning of any parameters in your model. Explain how statistical inference for your model can be used to answer the effect of major choice and identify any gender discrimination.**
 
+<!-- X matrix: 15 from  major level, one col for intercept, one col for gender -->
+<!-- y vec: salary -->
+<!-- B vec: coefficients -->
+
+We fit the model, determine the coefficients, and then interpret them, (ensuring all the assumptions are valid).
 
 **3. Using first principles (i.e. DON’T use lm() but you can check your answer with lm() ), calculate and report the estimates in a table.**
-**Interpret the coefficient for 1 categorical explanatory variable and the coefficient for GPA. Also calculate the estimate of the residual variance (or standard deviation) and (you can use lm() to get ).**
+**Interpret the coefficient for 1 categorical explanatory variable and the coefficient for GPA. Also calculate the estimate of the residual variance (or standard deviation) and (you can use lm() to get R^2).**
+<!-- come back and report bhat as a pretty table -->
 
+```{r}
+sal.lm <- lm(Salary ~., data=sal)
+summary(sal.lm)
 
+X <- model.matrix(Salary ~., data=sal)
+y <- sal$Salary
+bhat <- solve(t(X)%*%X)%*%t(X)%*%y
+bhat_table <- as.table(bhat)
+
+# Estimate of residual variance
+s2 <- t(y-X %*% bhat)%*% (y-X%*%bhat) /(nrow(sal)-ncol(X))
+s2
+
+sqrt(s2)
+sigma(sal.lm)
+
+# R^2
+summary(sal.lm)$r.squared
+```
+
+Compared to women, on average men make $5931.63 more, holding all else constant. 
+With every unit increase in GPA, holding all else constant, the average salary increases by $5,488.74.
 
 **4. One common argument is that some disciplines have greater biases (in terms of lower salaries) towards women than others. To verify this, check for interactions between major and gender by (i) drawing side-by-side boxplots of salary for each major category and gender combination and (ii) running an appropriate hypothesis test (either t or F) to check for significance. Comment on potential gender -->**
 <!-- # βˆ -->
@@ -94,7 +110,50 @@ ggplot(sal, aes(x = MajorCategory, fill = Gen)) +
 <!-- discrimination from your boxplot. For your hypothesis test, state your hypotheses, report an appropriate test statistic, -value and give -->
 your conclusion.
 
+```{r}
+ggplot(sal, aes(x = MajorCategory, y = Salary, fill = Gen)) +
+  geom_boxplot(position = "dodge") +
+  labs(title = "Box Plot of Salary by Major Category and Gender",
+       x = "Major Category",
+       y = "Salary",
+       fill = "Gender") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+It appears that men have a higher salary across all majors. Personally, I don't feel that we can't comment on "gender discrimination" even if there is an apparent difference. 
+
+```{r}
+# interaction.plot(x.factor = sal$MajorCategory, trace.factor = sal$Gen, response = sal$Salary)
+# interaction.plot(x.factor = sal$Gen, trace.factor = sal$MajorCategory, response = sal$Salary)
+# head(sal)
+```
+
+
+<!-- confirm with TA --> 
+
+```{r}
+summary(sal.lm)$fstatistic[1]
+sal.lm.no.gpa <- lm(Salary ~ MajorCategory + Gen, data = sal)
+summary(sal.lm)
+
+summary(sal.lm.no.gpa)
+sal.lm.int<- lm(Salary ~ MajorCategory*Gen, data = sal)
+anova(sal.lm.int, sal.lm.no.gpa)
+
+
+sal.full <- lm(Salary ~ MajorCategory + Gen + GPA +MajorCategory*Gen, data = sal)
+summary(sal.full)
+
+anova(sal.full, sal.lm)
+```
+H0: Models are equivalent
+Because p <0.05, we have sufficient evidence to suggest 
+
+
+
+
 **5. The validity of the tests from #4 depend on the validity of the assumptions in your model (if your assumptions are violated then the values are likely wrong). Create graphics and/or run appropriate hypothesis tests to check the L-I-N-E assumptions associated with your multiple linear regression model including any interactions you found in #4. State why each assumption does or does not hold for the salary data.**
+
 
 
 **6. Calculate 97% confidence intervals for the coefficients for GPA, Gender and one major category. Interpret each interval.**
@@ -102,8 +161,121 @@ your conclusion.
 
 **7. For the Computers and Mathematics major category, perform a general linear hypothesis test that women, on average, earn less salary than men (for the same GPA). State your hypotheses, -value and conclusion. If this test is significant, report and estimate a 95% confidence interval for how much more men earn than women in that major category.**
 
+<!-- is this actually only looking at the computers and mathematics major category? why does it equal the coeff GenM on summary(sal.lm)? -->
+```{r}
+sal_stem <- sal %>%
+  filter(MajorCategory=='Computers & Mathematics') 
+sal_stem
 
-**8. Using predict.lm() and your fitted model, predict your salary and report an associated 95% prediction interval. Interpret this interval in context.**
+summary(sal.lm)
+
+a1 <- c(1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0)
+a2 <- c(1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0)
+#length(a2)
+#t(a1)%*%bhat
+#t(a2)%*%bhat
+#difference
+t(a1-a2)%*%bhat
+my.test <- multcomp::glht(sal.lm, linfct=t(a1-a2), alternative="greater")
+summary(my.test)
+confint(my.test, level = 0.95)
+```
+H0: Women >= men for computer and math
+HA: Women < men for computer and math 
+
+
+**8. Using predict.lm() and your fitted model, predict your salary and report an associated 95% prediction interval. Interpret this interval in context.** <!-- customize to each one of us :) -->
+
+```{r}
+new.x <- data.frame(MajorCategory='Computers & Mathematics', GPA = 3.0, Gen="M")
+predict.lm(sal.lm, new.x, interval="prediction", level=0.95)
+```
+For a new observation who was a computers & mathematics major with a ____ GPA and is a __M/F__ then we are 95% confident that their average salary lies somewhere between $70,701.40 and $92,336.59.
 
 
 **9. If we wish to use our model for prediction as we did in #8, we should verify how accurate our predictions are via cross-validation. Conduct a leave-one-out cross validation of the salary data. Report your average RPMSE along with the average prediction interval width. Comment on whether you think your predictions are accurate or not.**
+
+<!-- ask about if this code is leave-one-out -->
+```{r}
+n.cv <- 500 #Number of CV studies to run
+n.test <- nrow(sal)*.2 #Number of observations in a test set
+rpmse <- rep(x=NA, times=n.cv)
+bias <- rep(x=NA, times=n.cv)
+wid <- rep(x=NA, times=n.cv)
+cvg <- rep(x=NA, times=n.cv)
+n <- nrow(sal)
+
+
+for(cv in 1:n.cv){
+  ## Select test observations
+  test.obs <- sample(x=1:n, size=n.test)
+  
+  ## Split into test and training sets
+  test.set <- sal[test.obs,]
+  train.set <- sal[-test.obs,]
+  
+  ## Fit a lm() using the training data
+  train.lm <- lm(Salary ~., data=train.set)
+  
+  ## Generate predictions for the test set
+  my.preds <- predict.lm(train.lm, newdata=test.set, interval="prediction")
+  
+  ## Calculate bias
+  bias[cv] <- mean(my.preds[,'fit']-test.set[['Salary']])
+  
+  ## Calculate RPMSE
+  rpmse[cv] <- (test.set[['Salary']]-my.preds[,'fit'])^2 %>% mean() %>% sqrt()
+  
+  ## Calculate Coverage
+  cvg[cv] <- ((test.set[['Salary']] > my.preds[,'lwr']) & (test.set[['Salary']] < my.preds[,'upr'])) %>% mean()
+  
+  ## Calculate Width
+  wid[cv] <- (my.preds[,'upr'] - my.preds[,'lwr']) %>% mean()
+  
+}
+
+# RPMSE
+hist(rpmse, main="RPMSE Histogram", xlab="RPMSE")
+
+# Width histogram
+hist(wid, main="Width Histogram", xlab="Width")
+
+```
+```{r}
+n <- nrow(sal)
+rpmse <- rep(x=NA, times=n)
+wid <- rep(x=NA, times=n)
+
+
+
+for(i in 1:n){
+  ## Select test observations
+
+  
+  ## Split into test and training sets
+  test.set <- sal[i,]
+  train.set <- sal[-i,]
+  
+  ## Fit a lm() using the training data
+  train.lm <- lm(Salary ~., data=train.set)
+  
+  ## Generate predictions for the test set
+  my.preds <- predict.lm(train.lm, newdata=test.set, interval="prediction")
+  
+  
+  ## Calculate RPMSE
+  rpmse[i] <- (test.set[['Salary']]-my.preds[,'fit'])^2 %>% mean() %>% sqrt()
+  
+  
+  ## Calculate Width
+  wid[i] <- (my.preds[,'upr'] - my.preds[,'lwr']) %>% mean()
+  
+}
+
+# RPMSE
+hist(rpmse, main="RPMSE Histogram", xlab="RPMSE")
+
+# Width histogram
+hist(wid, main="Width Histogram", xlab="Width")
+```
+The width interval is basically saying 10,000 above or below which is not bad. 
