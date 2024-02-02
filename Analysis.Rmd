@@ -133,20 +133,24 @@ It appears that men have a higher salary across all majors. Personally, I don't 
 
 ```{r}
 summary(sal.lm)$fstatistic[1]
-sal.lm.no.gpa <- lm(Salary ~ MajorCategory + Gen, data = sal)
-summary(sal.lm)
+# sal.lm.no.gpa <- lm(Salary ~ MajorCategory + Gen, data = sal)
+# summary(sal.lm)
+# 
+# summary(sal.lm.no.gpa)
+# sal.lm.int<- lm(Salary ~ MajorCategory*Gen, data = sal)
+# anova(sal.lm.int, sal.lm.no.gpa)
 
-summary(sal.lm.no.gpa)
-sal.lm.int<- lm(Salary ~ MajorCategory*Gen, data = sal)
-anova(sal.lm.int, sal.lm.no.gpa)
 
-
-sal.full <- lm(Salary ~ MajorCategory + Gen + GPA +MajorCategory*Gen, data = sal)
+sal.full <- lm(Salary ~ MajorCategory + Gen + GPA +MajorCategory:Gen, data = sal)
 summary(sal.full)
 
 anova(sal.full, sal.lm)
+# We want to know if MajorCategory Gen interaction is significant WHILE account for GPA 
+# f value is 4.3 p value is ~0
+
+## MOVING FORWARD, WE NEED TO INCLUDE INTERACTION BC IT WAS SIGNIFICANT
 ```
-H0: Models are equivalent
+H0: Models are equivalent, beta coefficients corresponding to interaction = 0
 Because p <0.05, we have sufficient evidence to suggest 
 
 
@@ -163,6 +167,11 @@ Because p <0.05, we have sufficient evidence to suggest
 
 <!-- is this actually only looking at the computers and mathematics major category? why does it equal the coeff GenM on summary(sal.lm)? -->
 ```{r}
+
+## MUST ADD IN ALL INTERACTION COEFFICIENTS
+## difference factor should have two ones - Gen:Math=1 and Gen=1
+
+#matrix nrow=1
 sal_stem <- sal %>%
   filter(MajorCategory=='Computers & Mathematics') 
 sal_stem
@@ -257,7 +266,7 @@ for(i in 1:n){
   train.set <- sal[-i,]
   
   ## Fit a lm() using the training data
-  train.lm <- lm(Salary ~., data=train.set)
+  train.lm <- lm(Salary ~.+MajorCategory:Gen, data=train.set)
   
   ## Generate predictions for the test set
   my.preds <- predict.lm(train.lm, newdata=test.set, interval="prediction")
@@ -274,8 +283,10 @@ for(i in 1:n){
 
 # RPMSE
 hist(rpmse, main="RPMSE Histogram", xlab="RPMSE")
+mean(rpmse) #rpmse is how off you are on average 
 
 # Width histogram
 hist(wid, main="Width Histogram", xlab="Width")
+mean(wid)
 ```
 The width interval is basically saying 10,000 above or below which is not bad. 
