@@ -157,6 +157,31 @@ Because p <0.05, we have sufficient evidence to suggest
 
 
 **5. The validity of the tests from #4 depend on the validity of the assumptions in your model (if your assumptions are violated then the values are likely wrong). Create graphics and/or run appropriate hypothesis tests to check the L-I-N-E assumptions associated with your multiple linear regression model including any interactions you found in #4. State why each assumption does or does not hold for the salary data.**
+<!-- DISCUSS: 'including any interactions you found in #4 -->
+
+We begin by testing for linearity. We do so by running an AVplot. 
+```{r}
+car::avPlots(sal.lm)
+```
+Because the only continuous variable GPA does not appear to be not linear, I believe my linearity assumption is met.
+
+For testing for normality, we consult a histogram of our standardized residuals. <!-- We can also check the ks.test - should I write out that name? -->
+```{r}
+ggplot() +
+  geom_histogram(mapping = aes(x = MASS::stdres(sal.lm)), bins = 30, fill = "blue", color = "black") +
+  labs(title = "Histogram of Standardized Residuals",
+       x = "Standardized Residuals",
+       y = "Frequency")
+
+ks.test(MASS::stdres(sal.lm), "pnorm")
+```
+The histogram of standardized residuals appears to be normally distributed. 
+
+Given p value of .401, we do not have sufficient evidence to reject the null hypothesis that the standardized residuals deviate significantly from a normal distribution.
+
+```{r}
+sal.lm
+```
 
 
 
