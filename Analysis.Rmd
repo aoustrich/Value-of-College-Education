@@ -315,3 +315,26 @@ hist(wid, main="Width Histogram", xlab="Width")
 mean(wid)
 ```
 The width interval is basically saying 10,000 above or below which is not bad. 
+
+
+
+
+## Independence
+
+We don't know exactly how the data was collected, so we can't say for sure if the data were randomly sampled and independent of one another. However, we know that a salary for one person doesn't typically depend on the salary of another person, so we can assume independence. This assumption is met, and we can proceed with the analysis by checking the other assumptions.
+
+## Equal Variance
+<!-- CHECK THAT THIS USES THE CORRECT LINEAR MODEL -->
+```{r message=FALSE}
+sal |> 
+  ggplot(aes(x = sal.lm$fitted.values,
+             y = rstandard(sal.lm))) +
+  geom_point() +
+  geom_smooth(method = "lm",
+              se = F) +
+  labs(x = "Fitted Values",
+       y = "Standardized Residuals")
+
+lmtest::bptest(sal.lm)
+```
+We can see from the fitted values vs. standardized residuals scatter plot that the spread of the points at any value along the x-axis is roughly the same. Also, the Breusch-Pagan test produces a large p-value. This means we fail to reject the null hypothesis and have insufficient information to say that the variance of the data is unequal. Therefore, we will say this assumption is met.
