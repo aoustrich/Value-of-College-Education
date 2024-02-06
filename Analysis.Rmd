@@ -17,20 +17,25 @@ library(MASS)
 library(lmtest)
 library(vroom)
 
-#Analysis Questions:
-
 ## Read in data
 sal <- vroom("Salary.csv")
 sal$MajorCategory <- as.factor(sal$MajorCategory)
 sal$Gen <- as.factor(sal$Gen)
-# head(sal)
 ```
 
-**1. Create exploratory plots and calculate summary statistics from the data. Comment on any potential relationships you see from these exploratory plots.**
-
-<!-- ADD A SCATTERPLOT MATRIX GGPAIRS --> 
+## 1. 
 
 ```{r}
+print("Salary Statistics")
+summary(sal$Salary)
+print("GPA Statistics")
+summary(sal$GPA)
+print("How many Genders in each Major Category?")
+table(sal$MajorCategory,sal$Gen)
+```
+Above are summary outputs of the continuous variables (Salary and GPA). We show the MajorCategory as a table which shows the number of each Gender in that Major. 
+
+```{r echo=FALSE}
 ggplot(sal, aes(x = GPA, y = Salary, color = Gen)) +
   geom_point() +
   geom_smooth(method = "lm", se = FALSE, formula = y ~ x, aes(group = Gen)) +
@@ -40,9 +45,9 @@ ggplot(sal, aes(x = GPA, y = Salary, color = Gen)) +
   theme_minimal()
 ```
 
+This scatterplot shows a positive relationship between GPA and Salary for both genders. Based on the lines of best fit, Male salary appears higher than Female salary for all GPA levels. It's interesting to note that both genders appear to have similar slope which leads us to believe the effect of GPA is consistent across the genders.
 
-
-```{r}
+```{r echo=FALSE}
 ggplot(sal, aes(x = MajorCategory, y = Salary, fill = MajorCategory)) +
   geom_boxplot() +
   labs(title = "Box Plot of Salary by Major Category",
@@ -53,7 +58,7 @@ ggplot(sal, aes(x = MajorCategory, y = Salary, fill = MajorCategory)) +
 ```
 
 
-```{r}
+```{r echo=FALSE}
 ggplot(sal, aes(x = MajorCategory, fill = Gen)) +
   geom_bar(position = "dodge") +
   labs(title = "Bar Graph of Major Category Counts by Gender",
@@ -65,19 +70,31 @@ ggplot(sal, aes(x = MajorCategory, fill = Gen)) +
 ```
 
 
+These last two plots show there are few outliers in salary across all the major categories and that there are more women represented in each major category than men (though they are all relatively equal).
 
 
-**2. Write down a linear regression model (in matrix and vector form) in terms of parameters. Explain the meaning of any parameters in your model. Explain how statistical inference for your model can be used to answer the effect of major choice and identify any gender discrimination.**
+## 2.
 
-<!-- X matrix: 15 from  major level, one col for intercept, one col for gender -->
-<!-- y vec: salary -->
-<!-- B vec: coefficients -->
+The multiple linear regression model is based on the following equation:
 
-We fit the model, determine the coefficients, and then interpret them, (ensuring all the assumptions are valid).
+$$\mathbf{y} = \mathbf{X}\mathbf{\beta} + \mathbf{\epsilon}$$
+Where:
 
-**3. Using first principles (i.e. DON’T use lm() but you can check your answer with lm() ), calculate and report the estimates in a table.**
-**Interpret the coefficient for 1 categorical explanatory variable and the coefficient for GPA. Also calculate the estimate of the residual variance (or standard deviation) and (you can use lm() to get R^2).**
-<!-- come back and report bhat as a pretty table -->
+- $\mathbf{y}$ is the vector of salaries
+
+- $\mathbf{X}$ is the matrix of explanatory variables which includes a column of 1s for the intercept and dummy-encoded columns for the categorical variables of Major Category and Gender.
+
+- $\mathbf{\beta}$ is the vector of coefficients
+
+- $\mathbf{\epsilon}$ is the vector of errors which are assumed to be normally distributed with mean 0 and constant variance $\sigma^2$ ( $\mathbf{\epsilon} \sim N(\mathbf{0}, \sigma^2\mathbf{I})$)
+
+
+Thus, the model is specified as: 
+$$\mathbf{y} \sim \text{MVN}(\mathbf{X\beta},\sigma^2\mathbf{I})$$
+
+If we fit the data to the specified model, and confirm the model assumptions are sufficiently met, we can determine the effect of major choice and identify any gender discrimination.
+
+## 3. 
 
 ```{r}
 sal.lm <- lm(Salary ~., data=sal)
@@ -87,6 +104,8 @@ X <- model.matrix(Salary ~., data=sal)
 y <- sal$Salary
 bhat <- solve(t(X)%*%X)%*%t(X)%*%y
 bhat_table <- as.table(bhat)
+colnames(bhat_table) <- "Beta Estimates"
+bhat_table
 
 # Estimate of residual variance
 s2 <- t(y-X %*% bhat)%*% (y-X%*%bhat) /(nrow(sal)-ncol(X))
@@ -102,15 +121,8 @@ summary(sal.lm)$r.squared
 Compared to women, on average men make $5931.63 more, holding all else constant. 
 With every unit increase in GPA, holding all else constant, the average salary increases by $5,488.74.
 
-**4. One common argument is that some disciplines have greater biases (in terms of lower salaries) towards women than others. To verify this, check for interactions between major and gender by (i) drawing side-by-side boxplots of salary for each major category and gender combination and (ii) running an appropriate hypothesis test (either t or F) to check for significance. Comment on potential gender -->**
-<!-- # βˆ -->
-<!-- R -->
-<!-- 2 R -->
-<!-- 2 -->
-<!-- discrimination from your boxplot. For your hypothesis test, state your hypotheses, report an appropriate test statistic, -value and give -->
-your conclusion.
-
-```{r}
+## 4. 
+```{r echo=FALSE}
 ggplot(sal, aes(x = MajorCategory, y = Salary, fill = Gen)) +
   geom_boxplot(position = "dodge") +
   labs(title = "Box Plot of Salary by Major Category and Gender",
@@ -120,42 +132,25 @@ ggplot(sal, aes(x = MajorCategory, y = Salary, fill = Gen)) +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
-It appears that men have a higher salary across all majors. Personally, I don't feel that we can't comment on "gender discrimination" even if there is an apparent difference. 
 
-```{r}
-# interaction.plot(x.factor = sal$MajorCategory, trace.factor = sal$Gen, response = sal$Salary)
-# interaction.plot(x.factor = sal$Gen, trace.factor = sal$MajorCategory, response = sal$Salary)
-# head(sal)
-```
-
-
-<!-- confirm with TA --> 
-
-```{r}
-summary(sal.lm)$fstatistic[1]
-# sal.lm.no.gpa <- lm(Salary ~ MajorCategory + Gen, data = sal)
-# summary(sal.lm)
-# 
-# summary(sal.lm.no.gpa)
-# sal.lm.int<- lm(Salary ~ MajorCategory*Gen, data = sal)
-# anova(sal.lm.int, sal.lm.no.gpa)
-
-
-sal.full <- lm(Salary ~ MajorCategory + Gen + GPA +MajorCategory:Gen, data = sal)
-summary(sal.full)
+``` {r}
+sal.full <- lm(Salary ~ MajorCategory + Gen + GPA + MajorCategory:Gen, data = sal)
 
 anova(sal.full, sal.lm)
-# We want to know if MajorCategory Gen interaction is significant WHILE account for GPA 
-# f value is 4.3 p value is ~0
-
-## MOVING FORWARD, WE NEED TO INCLUDE INTERACTION BC IT WAS SIGNIFICANT
 ```
-H0: Models are equivalent, beta coefficients corresponding to interaction = 0
-Because p <0.05, we have sufficient evidence to suggest 
+
+To see if there is an interaction between MajorCategory and Gender, we created a new model (`sal.full`) which adds interaction terms for these variables of interest. The null hypothesis is that there is no interaction between MajorCategory and Gender (i.e. all the $\beta$ coefficients for the interaction terms are all 0). The alternative hypothesis is that there is a significant interaction between MajorCategory and Gender.
+
+We evaluated this hypothesis using an ANOVA test on the two models and got an F statistic of 4.3 with a p-value less than 0.05. Therefore, we reject the null hypothesis and conclude that there is a significant interaction between MajorCategory and Gender.
+
+It appears that men have a higher salary across all majors. Personally, we don't feel that we can comment on "gender discrimination" even if there is an apparent difference, because we don't know enough about the data (ex: how these salaries were negotiated or how salaries may be different in the same company). 
 
 
+## 5.
 
+### Linearity Assumption
 
+<<<<<<< HEAD
 **5. The validity of the tests from #4 depend on the validity of the assumptions in your model (if your assumptions are violated then the values are likely wrong). Create graphics and/or run appropriate hypothesis tests to check the L-I-N-E assumptions associated with your multiple linear regression model including any interactions you found in #4. State why each assumption does or does not hold for the salary data.**
 <!-- DISCUSS: 'including any interactions you found in #4 -->
 
@@ -191,90 +186,118 @@ sal.lm
 **7. For the Computers and Mathematics major category, perform a general linear hypothesis test that women, on average, earn less salary than men (for the same GPA). State your hypotheses, -value and conclusion. If this test is significant, report and estimate a 95% confidence interval for how much more men earn than women in that major category.**
 
 <!-- is this actually only looking at the computers and mathematics major category? why does it equal the coeff GenM on summary(sal.lm)? -->
+=======
+>>>>>>> e3ec90b (Finished)
 ```{r}
+avPlots(sal.full)
+```
 
-## MUST ADD IN ALL INTERACTION COEFFICIENTS
-## difference factor should have two ones - Gen:Math=1 and Gen=1
+Based on all the added variable plots above, we believe the Linearity assumption is met. Looking at the added variable plot of the only continuous variable (GPA) is linear. All other categorical plots look weird, but there's nothing in them that suggest a non-linear relationship.
 
-#matrix nrow=1
-sal_stem <- sal %>%
-  filter(MajorCategory=='Computers & Mathematics') 
-sal_stem
+### Independence Assumption
 
-summary(sal.lm)
+We don't know exactly how the data was collected, so we can't say for sure if the data were randomly sampled and independent of one another. However, we know that a salary for one person doesn't typically depend on the salary of another person, so we can assume independence. This assumption is met, and we can proceed with the analysis by checking the other assumptions.
 
-a1 <- c(1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0)
-a2 <- c(1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0)
-#length(a2)
-#t(a1)%*%bhat
-#t(a2)%*%bhat
-#difference
-t(a1-a2)%*%bhat
-my.test <- multcomp::glht(sal.lm, linfct=t(a1-a2), alternative="greater")
+### Normality Assumption
+```{r echo=FALSE}
+std_resids <- MASS::stdres(sal.full)
+
+ggplot() +
+  geom_histogram(mapping = aes(x = std_resids), bins = 30, fill = "blue", color = "black") +
+  labs(title = "Histogram of Standardized Residuals",
+       x = "Standardized Residuals",
+       y = "Frequency")
+```
+
+``` {r}
+ks.test(std_resids, "pnorm")
+```
+
+Because the histogram of the standardized residuals looks roughly normal and the p-value of the Kolmogorov-Smirnov test is greater than 0.05, we fail to reject the null hypothesis and conclude that the standardized residuals are normally distributed. Therefore, we will say this assumption is met.
+
+### Equal Variance Assumption
+```{r message=FALSE, echo=FALSE}
+sal %>% 
+  ggplot(aes(x = sal.full$fitted.values,
+             y = std_resids)) +
+  geom_point() +
+  geom_smooth(method = "lm",
+              se = F) +
+  labs(x = "Fitted Values",
+       y = "Standardized Residuals")
+```
+
+``` {r}
+lmtest::bptest(sal.full)
+```
+
+We can see from the fitted values vs. standardized residuals scatter plot that the spread of the points at any value along the x-axis is roughly the same. Also, the Breusch-Pagan test produces a large p-value. This means we fail to reject the null hypothesis and have insufficient information to say that the variance of the data is unequal. Therefore, we will say this assumption is met.
+
+## 6.
+```{r}
+confint(sal.full,"GPA", level = 0.97)
+confint(sal.full, "GenM", level = 0.97)
+confint(sal.full, "MajorCategoryArts", level = 0.97)
+```
+
+The 97% confidence interval for the coefficient of GPA is (4646.385, 6129.755). This means that we are 97% confident that for every unit increase in GPA, while holding all other variables constant, average salary increases between \$4,646.39 and \$6,129.76.
+
+The 97% confidence interval for the coefficient of GenM is (939.567, 24387.63). This means that we are 97% confident that a male's salary on average is between \$4,646.39 and \$6,129.76 higher than a female's while holding all other variables constant.
+
+The 97% confidence interval for the coefficient of MajorCategoryArts is (-3377.766, 4805.189). This means that we are 97% confident that the average salary for the Arts major category is between \$3,377.77 lower and \$4,805.19 higher than the average salary for the baseline major (Agriculture and Natural Resources), while holding all else constant.
+
+## 7. 
+```{r}
+a1 <- c(1, #intercept
+        0,0,0,0, 
+        1, #computer and math
+        0,0,0,0,0,0,0,0,0,0,
+        1, #genM
+        2.5, #gpa
+        0,0,0,0,
+        1, # math interaction man
+        0,0,0,0,0,0,0,0,0,0)
+
+a2 <- c(1, #intercept
+        0,0,0,0, 
+        1,#computer and math
+        0,0,0,0,0,0,0,0,0,0,
+        0, #genF
+        2.5, #gpa
+        0,0,0,0,
+        0, # math interaction man
+        0,0,0,0,0,0,0,0,0,0)
+
+my.test <- multcomp::glht(sal.full, linfct=t(a1-a2), alternative="two.sided")
 summary(my.test)
 confint(my.test, level = 0.95)
 ```
-H0: Women >= men for computer and math
-HA: Women < men for computer and math 
 
+H0: Women's salary for computer and math = Men's salary for computer and math
+HA: Women's salary for computer and math != Men's salary for computer and math
 
-**8. Using predict.lm() and your fitted model, predict your salary and report an associated 95% prediction interval. Interpret this interval in context.** <!-- customize to each one of us :) -->
+Based on the results of our general linear hypothesis test, we have a p-value of 1.53e-05 so we reject the null hypothesis and conclude that women's salary for computer and math not equal to men's salary for computer and math major. The 95% confidence interval for the difference in average salary between men and women in the computer and math major category is (4339.6592,11468.8276). This means that we are 95% confident that the average salary of a man who majored in computer and math is between \$4,339.66 and \$11,468.83 higher than the average salary for women of the same major, while holding all else constant.
+
+## 8.
 
 ```{r}
-new.x <- data.frame(MajorCategory='Computers & Mathematics', GPA = 3.0, Gen="M")
-predict.lm(sal.lm, new.x, interval="prediction", level=0.95)
+new.josh <- data.frame(MajorCategory='Computers & Mathematics', GPA = 3.98, Gen="M")
+predict.lm(sal.full, new.josh, interval="prediction", level=0.95)
+
+new.aaron <- data.frame(MajorCategory='Computers & Mathematics', GPA = 3.81, Gen="M")
+predict.lm(sal.full, new.aaron, interval="prediction", level=0.95)
+
+new.anna <- data.frame(MajorCategory='Computers & Mathematics', GPA = 3.5, Gen="F")
+predict.lm(sal.full, new.anna, interval="prediction", level=0.95)
 ```
-For a new observation who was a computers & mathematics major with a ____ GPA and is a __M/F__ then we are 95% confident that their average salary lies somewhere between $70,701.40 and $92,336.59.
 
+For Josh, who is a male computers & mathematics major with a 3.98 GPA we are 95% confident that his average salary lies somewhere between \$82,932.69 and \$104,253.80.
 
-**9. If we wish to use our model for prediction as we did in #8, we should verify how accurate our predictions are via cross-validation. Conduct a leave-one-out cross validation of the salary data. Report your average RPMSE along with the average prediction interval width. Comment on whether you think your predictions are accurate or not.**
+For Aaron, who is a male computers & mathematics major with a 3.81 GPA we are 95% confident that his average salary lies somewhere between \$82,019.24 and \$103,335.30.
 
-<!-- ask about if this code is leave-one-out -->
-```{r}
-n.cv <- 500 #Number of CV studies to run
-n.test <- nrow(sal)*.2 #Number of observations in a test set
-rpmse <- rep(x=NA, times=n.cv)
-bias <- rep(x=NA, times=n.cv)
-wid <- rep(x=NA, times=n.cv)
-cvg <- rep(x=NA, times=n.cv)
-n <- nrow(sal)
+For Anna, who is a female computers & mathematics major with a 3.5 GPA we are 95% confident that her average salary lies somewhere between \$72,612.75 and \$93,592.68.
 
-
-for(cv in 1:n.cv){
-  ## Select test observations
-  test.obs <- sample(x=1:n, size=n.test)
-  
-  ## Split into test and training sets
-  test.set <- sal[test.obs,]
-  train.set <- sal[-test.obs,]
-  
-  ## Fit a lm() using the training data
-  train.lm <- lm(Salary ~., data=train.set)
-  
-  ## Generate predictions for the test set
-  my.preds <- predict.lm(train.lm, newdata=test.set, interval="prediction")
-  
-  ## Calculate bias
-  bias[cv] <- mean(my.preds[,'fit']-test.set[['Salary']])
-  
-  ## Calculate RPMSE
-  rpmse[cv] <- (test.set[['Salary']]-my.preds[,'fit'])^2 %>% mean() %>% sqrt()
-  
-  ## Calculate Coverage
-  cvg[cv] <- ((test.set[['Salary']] > my.preds[,'lwr']) & (test.set[['Salary']] < my.preds[,'upr'])) %>% mean()
-  
-  ## Calculate Width
-  wid[cv] <- (my.preds[,'upr'] - my.preds[,'lwr']) %>% mean()
-  
-}
-
-# RPMSE
-hist(rpmse, main="RPMSE Histogram", xlab="RPMSE")
-
-# Width histogram
-hist(wid, main="Width Histogram", xlab="Width")
-
-```
+## 9. 
 ```{r}
 n <- nrow(sal)
 rpmse <- rep(x=NA, times=n)
@@ -310,31 +333,17 @@ for(i in 1:n){
 hist(rpmse, main="RPMSE Histogram", xlab="RPMSE")
 mean(rpmse) #rpmse is how off you are on average 
 
+#standard deviation of salary = 10996.17
+
+(var(sal$Salary) - mean(rpmse)^2 ) / var(sal$Salary)  # 84.29% of overall variance reduction
+
 # Width histogram
 hist(wid, main="Width Histogram", xlab="Width")
 mean(wid)
 ```
-The width interval is basically saying 10,000 above or below which is not bad. 
 
+Using the average RPMSE from our Leave One Out Cross-validation and the variance of the salary in the dataset, we calculated an overall variance reduction of 84.29%. 
 
+The average width of the predicted intervals is \$21,013.43. This means that on average, the predictions are about \$10,506.72 over or under the actual salary.
 
-
-## Independence
-
-We don't know exactly how the data was collected, so we can't say for sure if the data were randomly sampled and independent of one another. However, we know that a salary for one person doesn't typically depend on the salary of another person, so we can assume independence. This assumption is met, and we can proceed with the analysis by checking the other assumptions.
-
-## Equal Variance
-<!-- CHECK THAT THIS USES THE CORRECT LINEAR MODEL -->
-```{r message=FALSE}
-sal |> 
-  ggplot(aes(x = sal.lm$fitted.values,
-             y = rstandard(sal.lm))) +
-  geom_point() +
-  geom_smooth(method = "lm",
-              se = F) +
-  labs(x = "Fitted Values",
-       y = "Standardized Residuals")
-
-lmtest::bptest(sal.lm)
-```
-We can see from the fitted values vs. standardized residuals scatter plot that the spread of the points at any value along the x-axis is roughly the same. Also, the Breusch-Pagan test produces a large p-value. This means we fail to reject the null hypothesis and have insufficient information to say that the variance of the data is unequal. Therefore, we will say this assumption is met.
+Both the width and RPMSE histograms above are right-skewed so the average values we report above are made higher than most of the cross-validated values. Overall, we think our model is fairly accurate at predicting new salaries. 
