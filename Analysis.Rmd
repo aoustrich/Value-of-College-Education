@@ -145,11 +145,9 @@ We evaluated this hypothesis using an ANOVA test on the two models and got an F 
 
 It appears that men have a higher salary across all majors. Personally, we don't feel that we can comment on "gender discrimination" even if there is an apparent difference, because we don't know enough about the data (ex: how these salaries were negotiated or how salaries may be different in the same company). 
 
-
 ## 5.
 
 ### Linearity Assumption
-
 ```{r}
 avPlots(sal.full)
 ```
@@ -171,7 +169,7 @@ ggplot() +
        y = "Frequency")
 ```
 
-``` {r}
+``` {r warning=FALSE}
 ks.test(std_resids, "pnorm")
 ```
 
@@ -230,15 +228,17 @@ a2 <- c(1, #intercept
         0, # math interaction man
         0,0,0,0,0,0,0,0,0,0)
 
-my.test <- multcomp::glht(sal.full, linfct=t(a1-a2), alternative="two.sided")
+# my.test <- multcomp::glht(sal.full, linfct=t(a1-a2), alternative="two.sided")
+my.test <- multcomp::glht(sal.full, linfct=t(a1-a2), alternative="greater")
 summary(my.test)
-confint(my.test, level = 0.95)
+my.test.ci <- multcomp::glht(sal.full, linfct=t(a1-a2), alternative="two.sided")
+confint(my.test.ci, level = 0.95)
 ```
 
 H0: Women's salary for computer and math = Men's salary for computer and math
 HA: Women's salary for computer and math != Men's salary for computer and math
 
-Based on the results of our general linear hypothesis test, we have a p-value of 1.53e-05 so we reject the null hypothesis and conclude that women's salary for computer and math not equal to men's salary for computer and math major. The 95% confidence interval for the difference in average salary between men and women in the computer and math major category is (4339.6592,11468.8276). This means that we are 95% confident that the average salary of a man who majored in computer and math is between \$4,339.66 and \$11,468.83 higher than the average salary for women of the same major, while holding all else constant.
+Based on the results of our general linear hypothesis test, we have a p-value of 7.67e-06 so we reject the null hypothesis and conclude that women's salary for computer and math not equal to men's salary for computer and math major. The 95% confidence interval for the difference in average salary between men and women in the computer and math major category is (4339.6592,11468.8276). This means that we are 95% confident that the average salary of a man who majored in computer and math is between \$4,339.66 and \$11,468.83 higher than the average salary for women of the same major, while holding all else constant.
 
 ## 8.
 
